@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends, Header
 from pydantic import BaseModel
 from typing import Optional, List
-from pinecone import Pinecone, ServerlessSpec
+import pinecone
 from openai import AzureOpenAI
 # from sentence_transformers import SentenceTransformer  # Removed to reduce image size
 import os
@@ -14,24 +14,23 @@ load_dotenv()
 
 app = FastAPI(title="Personal Memory Assistant API")
 
-# Initialize Pinecone (new way)
-pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+# Initialize Pinecone (old way for v2.2.4)
+pinecone.init(api_key=os.getenv("PINECONE_API_KEY"), environment="us-east-1")
 
 # Create or connect to Pinecone index
 INDEX_NAME = "personal-memory"
 DIMENSION = 1536  # text-embedding-ada-002 dimension
 
 # Check if index exists, create if not
-existing_indexes = [index.name for index in pc.list_indexes()]
+existing_indexes = pinecone.list_indexes()
 if INDEX_NAME not in existing_indexes:
-    pc.create_index(
+    pinecone.create_index(
         name=INDEX_NAME,
         dimension=DIMENSION,
-        metric="cosine",
-        spec=ServerlessSpec(cloud="aws", region="us-east-1")
+        metric="cosine"
     )
 
-index = pc.Index(INDEX_NAME)
+index = pinecone.Index(INDEX_NAME)
 
 # Initialize Azure OpenAI client (optional for better embeddings)
 print(f"[DEBUG] Initializing Azure OpenAI...")
