@@ -14,23 +14,33 @@ load_dotenv()
 
 app = FastAPI(title="Personal Memory Assistant API")
 
-# Initialize Pinecone (old way for v2.2.4)
-pinecone.init(api_key=os.getenv("PINECONE_API_KEY"))
-
-# Create or connect to Pinecone index
+# Pinecone configuration
 INDEX_NAME = "personal-memory"
 DIMENSION = 1536  # text-embedding-ada-002 dimension
+pinecone_initialized = False
+index = None
 
-# Check if index exists, create if not
-existing_indexes = pinecone.list_indexes()
-if INDEX_NAME not in existing_indexes:
-    pinecone.create_index(
-        name=INDEX_NAME,
-        dimension=DIMENSION,
-        metric="cosine"
-    )
-
-index = pinecone.Index(INDEX_NAME)
+def initialize_pinecone():
+    global pinecone_initialized, index
+    if not pinecone_initialized:
+        try:
+            pinecone.init(api_key=os.getenv("PINECONE_API_KEY"))
+            
+            # Check if index exists, create if not
+            existing_indexes = pinecone.list_indexes()
+            if INDEX_NAME not in existing_indexes:
+                pinecone.create_index(
+                    name=INDEX_NAME,
+                    dimension=DIMENSION,
+                    metric="cosine"
+                )
+            
+            index = pinecone.Index(INDEX_NAME)
+            pinecone_initialized = True
+            print("[DEBUG] Pinecone initialized successfully")
+        except Exception as e:
+            print(f"[DEBUG] Pinecone initialization failed: {e}")
+            raise e
 
 # Initialize Azure OpenAI client (optional for better embeddings)
 print(f"[DEBUG] Initializing Azure OpenAI...")
@@ -148,6 +158,9 @@ def store_memory(request: StoreMemoryRequest, _: str = Depends(verify_api_key)):
         print(f"[DEBUG] Metadata prepared: {metadata}")
         
         # Store in Pinecone
+        print(f"[DEBUG] Initializing Pinecone if needed...")
+        initialize_pinecone()
+        
         print(f"[DEBUG] Upserting to Pinecone...")
         index.upsert([
             {
