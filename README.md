@@ -2,6 +2,54 @@
 
 A voice assistant you can call on a phone number that uses RAG memory to track your life and work history.
 
+## Code Analysis - Personal Memory Assistant API
+
+**Architecture Overview:**
+This is a **vector-based memory storage and retrieval API** using RAG (Retrieval-Augmented Generation) architecture.
+
+**Key Components:**
+1. **FastAPI** - REST API framework
+2. **Pinecone** - Vector database for semantic search
+3. **Sentence Transformers** - Text embedding model
+4. **Azure OpenAI** - Alternative embedding provider
+
+**Application Flow:**
+
+### 1. **Initialization (Lines 17-44)**
+```
+Environment Setup → Pinecone Connection → Index Creation → Embedding Model Load
+```
+
+### 2. **Store Memory Flow (/api/store-memory)**
+```
+Request → Auth Check → Generate UUID → Create Embedding → Store in Pinecone → Return Success
+```
+- Takes text content and metadata
+- Converts to vector using `all-MiniLM-L6-v2` model
+- Stores in Pinecone with metadata (type, entities, priority, timestamp)
+
+### 3. **Search Memory Flow (/api/search-memory)**
+```
+Request → Auth Check → Query Embedding → Pinecone Search → Filter Results → Return Matches
+```
+- Converts search query to vector
+- Performs semantic similarity search
+- Filters by relevance score (>0.7) and metadata
+- Returns top 5 relevant memories
+
+### 4. **Authentication**
+- Bearer token authentication using `API_SECRET_KEY`
+- Required for all memory operations
+
+### 5. **Health Check**
+- Tests Pinecone connectivity
+- Returns vector count and status
+
+**Data Model:**
+- **Memory Storage**: content, type, entities, priority, timestamp
+- **Vector Dimension**: 384 (sentence-transformers model)
+- **Search**: Cosine similarity with metadata filtering
+
 ## 🏗️ Architecture
 
 ```
@@ -112,25 +160,3 @@ curl -X POST "http://localhost:8000/api/search-memory" \
 - `POST /api/search-memory`: Search stored memories  
 - `GET /api/health`: Health check and stats
 - `GET /docs`: Interactive API documentation
-
-## 🚀 Production Deployment
-
-1. **Get a domain**: Use services like Cloudflare, Namecheap
-2. **Deploy backend**: Railway, Heroku, or DigitalOcean
-3. **Update ElevenLabs tools**: Point to your production URL
-4. **Test thoroughly**: Make test calls to verify memory storage/retrieval
-
-## 🔐 Security Notes
-
-- API uses Bearer token authentication
-- All requests require valid `Authorization` header
-- Store API keys securely in environment variables
-- Use HTTPS in production
-
-## 🎯 Next Steps
-
-- Add more sophisticated entity extraction
-- Implement user authentication for multi-user support
-- Add memory categories and tagging
-- Integrate calendar APIs for meeting reminders
-- Add export functionality for stored memories

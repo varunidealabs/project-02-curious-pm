@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from pinecone import Pinecone, ServerlessSpec
 from openai import AzureOpenAI
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer  # Removed to reduce image size
 import os
 from datetime import datetime
 import json
@@ -19,7 +19,7 @@ pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 
 # Create or connect to Pinecone index
 INDEX_NAME = "personal-memory"
-DIMENSION = 384  # all-MiniLM-L6-v2 dimension
+DIMENSION = 1536  # text-embedding-ada-002 dimension
 
 # Check if index exists, create if not
 existing_indexes = [index.name for index in pc.list_indexes()]
@@ -40,11 +40,12 @@ azure_client = AzureOpenAI(
     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
 )
 
-# Initialize embedding model (using sentence-transformers as primary)
-embedder = SentenceTransformer('all-MiniLM-L6-v2')
+# Initialize embedding model (using Azure OpenAI as primary)
+# embedder = SentenceTransformer('all-MiniLM-L6-v2')  # Commented out to reduce image size
+embedder = None  # Will use Azure OpenAI only
 
-def get_embedding(text: str, use_azure: bool = False):
-    """Get embedding for text using either sentence-transformers or Azure OpenAI"""
+def get_embedding(text: str, use_azure: bool = True):
+    """Get embedding for text using Azure OpenAI (sentence-transformers removed for smaller image)"""
     if use_azure and azure_client:
         try:
             response = azure_client.embeddings.create(
@@ -53,10 +54,9 @@ def get_embedding(text: str, use_azure: bool = False):
             )
             return response.data[0].embedding
         except Exception as e:
-            print(f"Azure embedding failed, using sentence-transformers: {e}")
-            return embedder.encode(text).tolist()
+            raise HTTPException(status_code=500, detail=f"Azure embedding failed: {str(e)}")
     else:
-        return embedder.encode(text).tolist()
+        raise HTTPException(status_code=500, detail="Azure OpenAI is required but not configured")
 
 # Pydantic models
 class StoreMemoryRequest(BaseModel):
