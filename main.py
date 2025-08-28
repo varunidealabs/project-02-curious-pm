@@ -19,7 +19,7 @@ pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 
 # Create or connect to Pinecone index
 INDEX_NAME = "personal-memory"
-DIMENSION = 1536  # text-embedding-ada-002 dimension
+DIMENSION = 3072  # text-embedding-3-large dimension
 
 # Check if index exists, create if not
 existing_indexes = [index.name for index in pc.list_indexes()]
@@ -53,7 +53,7 @@ def get_embedding(text: str, use_azure: bool = True):
     if use_azure and azure_client:
         try:
             response = azure_client.embeddings.create(
-                model="text-embedding-ada-002",
+                model=os.getenv("AZURE_OPENAI_DEPLOYMENT", "text-embedding-3-large"),
                 input=text
             )
             return response.data[0].embedding
