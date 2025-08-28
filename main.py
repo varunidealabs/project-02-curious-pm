@@ -34,11 +34,15 @@ if INDEX_NAME not in existing_indexes:
 index = pc.Index(INDEX_NAME)
 
 # Initialize Azure OpenAI client (optional for better embeddings)
-azure_client = AzureOpenAI(
-    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-    api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
-    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
-)
+try:
+    azure_client = AzureOpenAI(
+        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+        api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
+    )
+except Exception as e:
+    print(f"Azure OpenAI initialization failed: {e}")
+    azure_client = None
 
 # Initialize embedding model (using Azure OpenAI as primary)
 # embedder = SentenceTransformer('all-MiniLM-L6-v2')  # Commented out to reduce image size
