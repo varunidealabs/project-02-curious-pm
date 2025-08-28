@@ -15,7 +15,7 @@ load_dotenv()
 app = FastAPI(title="Personal Memory Assistant API")
 
 # Initialize Pinecone (old way for v2.2.4)
-pinecone.init(api_key=os.getenv("PINECONE_API_KEY"), environment="us-east-1")
+pinecone.init(api_key=os.getenv("PINECONE_API_KEY"))
 
 # Create or connect to Pinecone index
 INDEX_NAME = "personal-memory"
