@@ -4,7 +4,7 @@ from typing import Optional, List
 from pinecone import Pinecone, ServerlessSpec
 from openai import AzureOpenAI
 import os
-from datetime import datetime
+from datetime import datetime 
 import uuid
 from dotenv import load_dotenv
 
